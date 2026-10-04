@@ -32,7 +32,7 @@ def retrieve_context(query: str):
     
     # Serialize documents for the model
     serialized = "\n\n".join(
-        (f"Source: {doc.metada.get('source', 'Unknown')}\n\nContent: {doc.page_content}") # type: ignore
+        (f"Source: {doc.metadata.get('source', 'Unknown')}\n\nContent: {doc.page_content}") # type: ignore
         for doc in retrieve_docs
     )
     
