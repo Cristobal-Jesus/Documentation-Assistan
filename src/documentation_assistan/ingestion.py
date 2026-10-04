@@ -13,8 +13,8 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_tavily import TavilyCrawl, TavilyExtract, TavilyMap
 
-from src.documentation_assistan.logger import (Colors, log_error, log_header, log_info, log_success,
-                    log_warning)
+from logger import (Colors, log_error, log_header, log_info, log_success, # type: ignore
+                    log_warning) # type: ignore
 
 load_dotenv()
 
@@ -28,3 +28,35 @@ embeddings = OpenAIEmbeddings(
     model="text-embedding-3-small", show_progress_bar=False, chunk_size=50, retry_min_seconds=10
 )
 
+# chroma = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
+vectorstore = PineconeVectorStore(index_name="langchain-doc-index", embedding=embeddings)
+tavily_extract = TavilyExtract()
+tavily_map = TavilyMap(max_depth=5, max_breadth=20, max_pages=1000)
+tavily_crawl = TavilyCrawl()
+
+
+async def main():
+    """Main async function to orchestrate the entire process."""
+    log_header("DOCUMENTATION INGESTION PIPELINE")
+    
+    log_info(
+        "   TavilyCrawl: Starting to Crawl documentation from https://python.langchain.com/",
+        Colors.PURPLE, # type: ignore
+    )
+    
+    # Crawl the documentation site
+    
+    res = tavily_crawl.invoke({
+        "url": "https://python.langchain.com/",
+        "max_depth": 1,
+        "extract_depth": "advanced",
+    })
+    
+    all_docs = [Document(page_content=result['raw_content'], metadata={"source": result['url']}) for result in res["results"]]
+    log_success(
+        f"TavilyCrawl: Successfully crawled {len(all_docs)} URLs from documentation site."
+    )
+    
+    
+if __name__ == "__main__":
+    asyncio.run(main())
